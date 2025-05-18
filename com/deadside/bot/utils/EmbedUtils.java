@@ -783,6 +783,137 @@ public class EmbedUtils {
      * @param serverName Optional server name for footer
      * @return A styled embed focusing on PvP statistics
      */
+    /**
+     * Create a detailed PvP player profile embed with comprehensive stats
+     * Enhanced as part of the PvP aesthetic integration
+     *
+     * @param player The Player object containing all player statistics
+     * @param serverName Optional server name for footer
+     * @return A styled embed with detailed player combat profile
+     */
+    public static MessageEmbed detailedPvpProfileEmbed(com.deadside.bot.db.models.Player player, String serverName) {
+        if (player == null) {
+            return errorEmbed("Player Profile Error", "No player data available.");
+        }
+        
+        String playerName = player.getName();
+        int kills = player.getKills();
+        int deaths = player.getDeaths();
+        int suicides = player.getSuicides();
+        double kdr = player.getKdRatio();
+        int score = player.getScore();
+        
+        // Get weapon expertise info
+        String weaponInfo;
+        if (player.getMostUsedWeapon() != null && !player.getMostUsedWeapon().isEmpty()) {
+            weaponInfo = "**" + player.getMostUsedWeapon() + "**\n" +
+                         kills > 0 ? 
+                           String.format("%.1f%% of kills (%d)", 
+                               (float) player.getMostUsedWeaponKills() * 100 / kills,
+                               player.getMostUsedWeaponKills()) :
+                           "No confirmed kills yet";
+        } else {
+            weaponInfo = "No specialized weapon yet";
+        }
+        
+        // Get player rivalry info
+        String rivalryInfo = "";
+        if (player.getMostKilledPlayer() != null && !player.getMostKilledPlayer().isEmpty()) {
+            rivalryInfo += "Top Victim: **" + player.getMostKilledPlayer() + "** (" + 
+                          player.getMostKilledPlayerCount() + " eliminations)\n";
+        }
+        
+        if (player.getKilledByMost() != null && !player.getKilledByMost().isEmpty()) {
+            rivalryInfo += "Main Adversary: **" + player.getKilledByMost() + "** (" + 
+                          player.getKilledByMostCount() + " deaths)";
+        }
+        
+        if (rivalryInfo.isEmpty()) {
+            rivalryInfo = "No established rivalries yet";
+        }
+        
+        // Competitive ranking determination based on KDR and total kills
+        String rankTitle;
+        String rankDescription;
+        Color rankColor;
+        
+        if (kdr >= 3.0 && kills >= 20) {
+            rankTitle = "APEX PREDATOR";
+            rankDescription = "Elite tier wasteland hunter with overwhelming dominance";
+            rankColor = new Color(153, 0, 0); // Deep red for top players
+        } else if (kdr >= 2.0 || (kdr >= 1.5 && kills >= 15)) {
+            rankTitle = "VETERAN HUNTER";
+            rankDescription = "Highly skilled combatant with notable kill record";
+            rankColor = new Color(204, 51, 0); // Orange-red for skilled players
+        } else if (kdr >= 1.0 || (kdr >= 0.8 && kills >= 10)) {
+            rankTitle = "DEADSIDE WARRIOR";
+            rankDescription = "Competent survivor with positive elimination record";
+            rankColor = DEADSIDE_ACCENT; // Standard brand color
+        } else if (kdr >= 0.5 || kills >= 5) {
+            rankTitle = "SURVIVOR";
+            rankDescription = "Learning the wasteland's dangers through experience";
+            rankColor = DEADSIDE_DARK; // Darker brand color
+        } else {
+            rankTitle = "RECRUIT";
+            rankDescription = "Still finding their footing in the unforgiving wasteland";
+            rankColor = DEADSIDE_SECONDARY; // Secondary brand color
+        }
+        
+        // Calculate combat efficiency (kills per death, excluding suicides)
+        String efficiencyRating;
+        if (deaths == 0) {
+            efficiencyRating = "∞ (Flawless)";
+        } else {
+            double efficiency = (double) kills / deaths;
+            if (efficiency >= 2.5) efficiencyRating = "S+ (Elite)";
+            else if (efficiency >= 2.0) efficiencyRating = "S (Exceptional)";
+            else if (efficiency >= 1.5) efficiencyRating = "A (Superior)";
+            else if (efficiency >= 1.0) efficiencyRating = "B (Proficient)";
+            else if (efficiency >= 0.7) efficiencyRating = "C (Average)";
+            else if (efficiency >= 0.4) efficiencyRating = "D (Developing)";
+            else efficiencyRating = "E (Novice)";
+        }
+        
+        // Server information
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = "Emerald EU"; // Default if not provided
+        }
+        String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        
+        // Create embed with enhanced styling for PvP aesthetic integration
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("⚔️ COMBAT PROFILE: " + playerName.toUpperCase())
+                .setDescription(playerName + " - **" + rankTitle + "**")
+                .setColor(rankColor)
+                .addField("COMBAT STATISTICS", 
+                          "Eliminations: **" + kills + "**\n" +
+                          "Deaths: **" + deaths + "**\n" +
+                          "Suicides: **" + suicides + "**\n" +
+                          "K/D Ratio: **" + String.format("%.2f", kdr) + "**\n" +
+                          "Score: **" + score + "**", true)
+                .addField("WEAPON EXPERTISE", weaponInfo, true)
+                .addField("COMBAT ASSESSMENT", rankDescription + "\n" +
+                          "Efficiency Rating: **" + efficiencyRating + "**", false)
+                .addField("RIVALRIES", rivalryInfo, false)
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
+                .setTimestamp(Instant.now())
+                .setThumbnail(ResourceManager.getAttachmentString(ResourceManager.WEAPON_STATS_LOGO));
+        
+        return embed.build();
+    }
+    
+    /**
+     * Create a basic PvP statistics embed for displaying player performance
+     * Part of the PvP aesthetic integration
+     *
+     * @param playerName Player whose stats are being displayed
+     * @param kills Number of kills
+     * @param deaths Number of deaths
+     * @param kdr Kill/death ratio
+     * @param weapon Most used weapon (if available, can be null)
+     * @param serverName Optional server name for footer
+     * @return A styled embed focusing on PvP statistics
+     */
     public static MessageEmbed pvpStatisticsEmbed(String playerName, int kills, int deaths, 
                                                  double kdr, String weapon, String serverName) {
         // Optional weapon info
@@ -842,5 +973,550 @@ public class EmbedUtils {
      */
     public static MessageEmbed pvpStatisticsEmbed(String playerName, int kills, int deaths, double kdr, String weapon) {
         return pvpStatisticsEmbed(playerName, kills, deaths, kdr, weapon, null);
+    }
+    
+    /**
+     * Create a weapon mastery embed showing player's proficiency with specific weapons
+     * Part of the PvP aesthetic integration
+     * 
+     * @param playerName Player whose weapon stats are being displayed
+     * @param weaponStats Map of weapon names to kill counts
+     * @param totalKills Total number of player kills
+     * @param serverName Optional server name for footer
+     * @return A styled embed focusing on weapon mastery
+     */
+    public static MessageEmbed weaponMasteryEmbed(String playerName, Map<String, Integer> weaponStats, 
+                                                 int totalKills, String serverName) {
+        if (weaponStats == null || weaponStats.isEmpty()) {
+            return simpleEmbed("Weapon Mastery", 
+                              "No weapon statistics available for " + playerName + " yet.", 
+                              DEADSIDE_ACCENT);
+        }
+        
+        // Find the most used weapon
+        String topWeapon = "";
+        int topWeaponKills = 0;
+        
+        for (Map.Entry<String, Integer> entry : weaponStats.entrySet()) {
+            if (entry.getValue() > topWeaponKills) {
+                topWeapon = entry.getKey();
+                topWeaponKills = entry.getValue();
+            }
+        }
+        
+        // Sort weapons by kill count
+        List<Map.Entry<String, Integer>> sortedWeapons = new ArrayList<>(weaponStats.entrySet());
+        sortedWeapons.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+        
+        // Build weapon statistics display
+        StringBuilder weaponDisplay = new StringBuilder();
+        int displayCount = Math.min(5, sortedWeapons.size()); // Top 5 weapons
+        
+        for (int i = 0; i < displayCount; i++) {
+            Map.Entry<String, Integer> entry = sortedWeapons.get(i);
+            double percentage = totalKills > 0 ? (entry.getValue() * 100.0) / totalKills : 0;
+            
+            weaponDisplay.append(String.format("**%s**: %d kills (%.1f%%)\n", 
+                                             entry.getKey(), entry.getValue(), percentage));
+        }
+        
+        // Weapon mastery assessment
+        String masteryTitle;
+        String masteryDescription;
+        
+        if (topWeaponKills >= 25) {
+            masteryTitle = "WEAPON MASTER";
+            masteryDescription = "Expert marksman with exceptional lethality";
+        } else if (topWeaponKills >= 15) {
+            masteryTitle = "EXPERIENCED MARKSMAN";
+            masteryDescription = "Highly proficient with their weapon of choice";
+        } else if (topWeaponKills >= 10) {
+            masteryTitle = "COMPETENT SHOOTER";
+            masteryDescription = "Shows good understanding of their chosen armament";
+        } else if (topWeaponKills >= 5) {
+            masteryTitle = "DEVELOPING GUNNER";
+            masteryDescription = "Beginning to show preference for specific loadouts";
+        } else {
+            masteryTitle = "VERSATILE SURVIVOR";
+            masteryDescription = "Uses whatever weapons the wasteland provides";
+        }
+        
+        // Server information
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = "Emerald EU"; // Default if not provided
+        }
+        String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        
+        // Create embed with enhanced styling for PvP aesthetic integration
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🎯 ARSENAL ANALYSIS: " + playerName.toUpperCase())
+                .setDescription(playerName + " - **" + masteryTitle + "**")
+                .setColor(DEADSIDE_ACCENT)
+                .addField("PRIMARY LOADOUT", 
+                         !topWeapon.isEmpty() ? 
+                         "Signature Weapon: **" + topWeapon + "**\n" +
+                         String.format("Confirmed Kills: **%d** (%.1f%% of total)", 
+                                     topWeaponKills, 
+                                     totalKills > 0 ? (topWeaponKills * 100.0) / totalKills : 0) :
+                         "No preferred weapon identified", false)
+                .addField("WEAPON STATISTICS", weaponDisplay.toString(), false)
+                .addField("COMBAT ASSESSMENT", masteryDescription, false)
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
+                .setTimestamp(Instant.now())
+                .setThumbnail(ResourceManager.getAttachmentString(ResourceManager.WEAPON_STATS_LOGO));
+        
+        return embed.build();
+    }
+    
+    /**
+     * Overloaded method for backward compatibility
+     */
+    public static MessageEmbed weaponMasteryEmbed(String playerName, Map<String, Integer> weaponStats, int totalKills) {
+        return weaponMasteryEmbed(playerName, weaponStats, totalKills, null);
+    }
+    
+    /**
+     * Create a player rivalry embed showing a detailed breakdown of a specific player vs player relationship
+     * Part of the PvP aesthetic integration
+     * 
+     * @param player1Name First player name
+     * @param player2Name Second player name
+     * @param player1Kills Number of times player1 killed player2
+     * @param player2Kills Number of times player2 killed player1
+     * @param serverName Optional server name for footer
+     * @return A styled embed showing player rivalry statistics
+     */
+    public static MessageEmbed rivalryEmbed(String player1Name, String player2Name, 
+                                          int player1Kills, int player2Kills, String serverName) {
+        // Determine who has the advantage
+        String dominantPlayer;
+        String challengerPlayer;
+        int dominantKills;
+        int challengerKills;
+        String rivalryStatus;
+        
+        if (player1Kills > player2Kills) {
+            dominantPlayer = player1Name;
+            challengerPlayer = player2Name;
+            dominantKills = player1Kills;
+            challengerKills = player2Kills;
+            rivalryStatus = "DOMINATING";
+        } else if (player2Kills > player1Kills) {
+            dominantPlayer = player2Name;
+            challengerPlayer = player1Name;
+            dominantKills = player2Kills;
+            challengerKills = player1Kills;
+            rivalryStatus = "DOMINATING";
+        } else {
+            // It's a tie
+            dominantPlayer = player1Name;
+            challengerPlayer = player2Name;
+            dominantKills = player1Kills;
+            challengerKills = player2Kills;
+            rivalryStatus = "DEADLOCKED";
+        }
+        
+        int killDifferential = Math.abs(player1Kills - player2Kills);
+        double killRatio = challengerKills > 0 ? 
+                          (double) dominantKills / challengerKills : 
+                          dominantKills;
+        
+        // Server information
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = "Emerald EU"; // Default if not provided
+        }
+        String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        
+        // Rivalry intensity description
+        String intensityDesc;
+        if (killDifferential >= 10) {
+            intensityDesc = "One-sided massacre";
+        } else if (killDifferential >= 5) {
+            intensityDesc = "Significant advantage";
+        } else if (killDifferential >= 3) {
+            intensityDesc = "Clear edge";
+        } else if (killDifferential >= 1) {
+            intensityDesc = "Slight advantage";
+        } else {
+            intensityDesc = "Perfect balance";
+        }
+        
+        // Total engagements and intensity
+        int totalEngagements = player1Kills + player2Kills;
+        String rivalryIntensity;
+        
+        if (totalEngagements >= 20) {
+            rivalryIntensity = "LEGENDARY FEUD";
+        } else if (totalEngagements >= 10) {
+            rivalryIntensity = "BITTER ENEMIES";
+        } else if (totalEngagements >= 5) {
+            rivalryIntensity = "EMERGING RIVALRY";
+        } else {
+            rivalryIntensity = "FIRST ENCOUNTERS";
+        }
+        
+        // Create embed with enhanced styling for PvP aesthetic integration
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("⚡ PLAYER RIVALRY: " + player1Name.toUpperCase() + " vs " + player2Name.toUpperCase())
+                .setDescription("**" + rivalryIntensity + "** - " + intensityDesc)
+                .setColor(new Color(153, 0, 51)) // Deep red for rivalries
+                .addField("RIVALRY STATISTICS", 
+                          player1Name + " eliminations: **" + player1Kills + "**\n" +
+                          player2Name + " eliminations: **" + player2Kills + "**\n" +
+                          "Total engagements: **" + totalEngagements + "**\n" +
+                          "Differential: **" + killDifferential + "**", false)
+                .addField("CURRENT STATUS", 
+                         rivalryStatus.equals("DEADLOCKED") ?
+                         "The hunters are evenly matched." :
+                         "**" + dominantPlayer + "** is " + rivalryStatus + " with a " + 
+                         String.format("%.1f", killRatio) + ":1 ratio", false)
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
+                .setTimestamp(Instant.now())
+                .setThumbnail(ResourceManager.getAttachmentString(ResourceManager.KILLFEED_LOGO));
+        
+        return embed.build();
+    }
+    
+    /**
+     * Overloaded method for backward compatibility
+     */
+    public static MessageEmbed rivalryEmbed(String player1Name, String player2Name, int player1Kills, int player2Kills) {
+        return rivalryEmbed(player1Name, player2Name, player1Kills, player2Kills, null);
+    }
+    
+    /**
+     * Create an embed for player death streaks (multiple deaths without kills)
+     * Part of the PvP aesthetic integration
+     * 
+     * @param playerName The player on a death streak
+     * @param deathCount Number of consecutive deaths
+     * @param killers List of players who caused the deaths (can be null or empty)
+     * @param serverName Optional server name for footer
+     * @return A styled embed for death streaks
+     */
+    public static MessageEmbed deathStreakEmbed(String playerName, int deathCount, 
+                                              List<String> killers, String serverName) {
+        // Validate death count
+        if (deathCount <= 0) {
+            deathCount = 1; // Minimum 1 death
+        }
+        
+        // Generate streak description based on severity
+        String streakTitle;
+        String streakDescription;
+        Color streakColor;
+        
+        if (deathCount >= 10) {
+            streakTitle = "CATASTROPHIC COLLAPSE";
+            streakDescription = "A truly disastrous series of encounters";
+            streakColor = new Color(139, 0, 0); // Dark red
+        } else if (deathCount >= 7) {
+            streakTitle = "BRUTAL DECIMATION";
+            streakDescription = "A merciless sequence of eliminations";
+            streakColor = new Color(178, 34, 34); // Firebrick red
+        } else if (deathCount >= 5) {
+            streakTitle = "SUSTAINED ASSAULT";
+            streakDescription = "A challenging series of defeats";
+            streakColor = new Color(205, 92, 92); // Indian red
+        } else if (deathCount >= 3) {
+            streakTitle = "ROUGH PATCH";
+            streakDescription = "A difficult stretch of encounters";
+            streakColor = new Color(233, 150, 122); // Dark salmon
+        } else {
+            streakTitle = "SETBACK";
+            streakDescription = "A temporary lapse in survival";
+            streakColor = new Color(250, 128, 114); // Salmon
+        }
+        
+        // Process killers information
+        StringBuilder killersInfo = new StringBuilder();
+        if (killers != null && !killers.isEmpty()) {
+            // Count occurrences of each killer
+            Map<String, Integer> killerCounts = new HashMap<>();
+            for (String killer : killers) {
+                killerCounts.put(killer, killerCounts.getOrDefault(killer, 0) + 1);
+            }
+            
+            // Sort killers by kill count
+            List<Map.Entry<String, Integer>> sortedKillers = new ArrayList<>(killerCounts.entrySet());
+            sortedKillers.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+            
+            // Build killers display (limited to top 3)
+            int displayCount = Math.min(3, sortedKillers.size());
+            for (int i = 0; i < displayCount; i++) {
+                Map.Entry<String, Integer> entry = sortedKillers.get(i);
+                killersInfo.append(String.format("**%s**: %d elimination%s\n", 
+                                               entry.getKey(), 
+                                               entry.getValue(),
+                                               entry.getValue() > 1 ? "s" : ""));
+            }
+            
+            // If there are more killers than we displayed
+            if (sortedKillers.size() > displayCount) {
+                killersInfo.append(String.format("... and %d more\n", sortedKillers.size() - displayCount));
+            }
+        } else {
+            killersInfo.append("Unknown assailants");
+        }
+        
+        // Server information
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = "Emerald EU"; // Default if not provided
+        }
+        String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        
+        // Create embed with enhanced styling for PvP aesthetic integration
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("💀 DEATH STREAK: " + playerName.toUpperCase())
+                .setDescription("**" + streakTitle + "** - " + deathCount + " consecutive deaths")
+                .setColor(streakColor)
+                .addField("STREAK ANALYSIS", streakDescription + "\n" +
+                         "Survival rate has significantly decreased.", false)
+                .addField("PRIMARY THREATS", killersInfo.toString(), false)
+                .addField("RECOVERY STRATEGY", 
+                         "• Reassess tactical approach\n" +
+                         "• Consider alternative routes\n" +
+                         "• Evaluate loadout effectiveness\n" + 
+                         "• Regroup with allies when possible", false)
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
+                .setTimestamp(Instant.now())
+                .setThumbnail(ResourceManager.getAttachmentString(ResourceManager.KILLFEED_LOGO));
+        
+        return embed.build();
+    }
+    
+    /**
+     * Overloaded method for backward compatibility
+     */
+    public static MessageEmbed deathStreakEmbed(String playerName, int deathCount, List<String> killers) {
+        return deathStreakEmbed(playerName, deathCount, killers, null);
+    }
+    
+    /**
+     * Create a server event embed for special game events like airdrops or helicrashes
+     * Part of the PvP aesthetic integration
+     * 
+     * @param eventType Type of event (AIRDROP, HELICRASH, etc.)
+     * @param location Event location or coordinates
+     * @param timestamp Event timestamp (can be null for current time)
+     * @param serverName Optional server name for footer
+     * @return A styled embed for server events
+     */
+    public static MessageEmbed serverEventEmbed(String eventType, String location, 
+                                              Instant timestamp, String serverName) {
+        // Normalize event type
+        String normalizedEventType = eventType.toUpperCase().trim();
+        
+        // Determine event details based on type
+        String eventTitle;
+        String eventDescription;
+        Color eventColor;
+        String thumbnailKey;
+        
+        switch (normalizedEventType) {
+            case "AIRDROP":
+                eventTitle = "SUPPLY DROP INBOUND";
+                eventDescription = "A cargo plane has released valuable supplies";
+                eventColor = new Color(65, 105, 225); // Royal blue
+                thumbnailKey = ResourceManager.AIRDROP_LOGO;
+                break;
+            case "HELICRASH":
+                eventTitle = "HELICOPTER CRASH SITE";
+                eventDescription = "A military helicopter has crashed with valuable equipment";
+                eventColor = new Color(178, 34, 34); // Firebrick red
+                thumbnailKey = ResourceManager.HELICRASH_LOGO;
+                break;
+            case "TRADER":
+                eventTitle = "TRADER CARAVAN";
+                eventDescription = "A wandering merchant has set up shop temporarily";
+                eventColor = new Color(218, 165, 32); // Goldenrod
+                thumbnailKey = ResourceManager.TRADER_LOGO;
+                break;
+            case "MISSION":
+                eventTitle = "SPECIAL MISSION";
+                eventDescription = "A high-value objective has been detected";
+                eventColor = new Color(0, 100, 0); // Dark green
+                thumbnailKey = ResourceManager.MISSION_LOGO;
+                break;
+            default:
+                eventTitle = normalizedEventType;
+                eventDescription = "A special event has been detected";
+                eventColor = DEADSIDE_ACCENT;
+                thumbnailKey = ResourceManager.MAIN_LOGO;
+        }
+        
+        // Use current time if not provided
+        if (timestamp == null) {
+            timestamp = Instant.now();
+        }
+        
+        // Server information
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = "Emerald EU"; // Default if not provided
+        }
+        String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        
+        // Create embed with enhanced styling for PvP aesthetic integration
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🔔 " + eventTitle)
+                .setDescription(eventDescription)
+                .setColor(eventColor)
+                .addField("LOCATION", location != null && !location.isEmpty() ? 
+                         location : "Unknown coordinates", true)
+                .addField("EVENT TIME", 
+                         DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
+                         .format(timestamp), true)
+                .addField("STRATEGIC VALUE", 
+                         "• High-tier equipment possible\n" +
+                         "• Expect significant player convergence\n" +
+                         "• Approach with caution", false)
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
+                .setTimestamp(timestamp)
+                .setThumbnail(ResourceManager.getAttachmentString(thumbnailKey));
+        
+        return embed.build();
+    }
+    
+    /**
+     * Overloaded method for backward compatibility
+     */
+    public static MessageEmbed serverEventEmbed(String eventType, String location, Instant timestamp) {
+        return serverEventEmbed(eventType, location, timestamp, null);
+    }
+    
+    /**
+     * Create a kill streak embed for players on a streak of multiple kills without dying
+     * Part of the PvP aesthetic integration
+     * 
+     * @param playerName The player on a kill streak
+     * @param killCount Number of consecutive kills
+     * @param victims List of victims (can be null or empty)
+     * @param weaponsUsed List of weapons used (can be null or empty)
+     * @param serverName Optional server name for footer
+     * @return A styled embed for kill streaks
+     */
+    public static MessageEmbed killStreakEmbed(String playerName, int killCount, 
+                                             List<String> victims, List<String> weaponsUsed, String serverName) {
+        // Validate kill count
+        if (killCount <= 0) {
+            killCount = 1; // Minimum 1 kill
+        }
+        
+        // Generate streak description based on severity
+        String streakTitle;
+        String streakDescription;
+        Color streakColor;
+        
+        if (killCount >= 10) {
+            streakTitle = "UNSTOPPABLE RAMPAGE";
+            streakDescription = "A truly dominating display of deadliness";
+            streakColor = new Color(139, 0, 0); // Dark red
+        } else if (killCount >= 7) {
+            streakTitle = "KILLING SPREE";
+            streakDescription = "A merciless sequence of eliminations";
+            streakColor = new Color(178, 34, 34); // Firebrick red
+        } else if (killCount >= 5) {
+            streakTitle = "BLOODBATH";
+            streakDescription = "An impressive streak of eliminations";
+            streakColor = new Color(205, 92, 92); // Indian red
+        } else if (killCount >= 3) {
+            streakTitle = "KILLING FRENZY";
+            streakDescription = "A focused series of successful hunts";
+            streakColor = new Color(220, 20, 60); // Crimson
+        } else {
+            streakTitle = "DOUBLE KILL";
+            streakDescription = "Back-to-back eliminations";
+            streakColor = new Color(255, 0, 0); // Red
+        }
+        
+        // Process victims information
+        StringBuilder victimsInfo = new StringBuilder();
+        if (victims != null && !victims.isEmpty()) {
+            // Count occurrences of each victim
+            Map<String, Integer> victimCounts = new HashMap<>();
+            for (String victim : victims) {
+                victimCounts.put(victim, victimCounts.getOrDefault(victim, 0) + 1);
+            }
+            
+            // Sort victims by kill count
+            List<Map.Entry<String, Integer>> sortedVictims = new ArrayList<>(victimCounts.entrySet());
+            sortedVictims.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+            
+            // Build victims display (limited to top 3)
+            int displayCount = Math.min(3, sortedVictims.size());
+            for (int i = 0; i < displayCount; i++) {
+                Map.Entry<String, Integer> entry = sortedVictims.get(i);
+                victimsInfo.append(String.format("**%s**: %d time%s\n", 
+                                               entry.getKey(), 
+                                               entry.getValue(),
+                                               entry.getValue() > 1 ? "s" : ""));
+            }
+            
+            // If there are more victims than we displayed
+            if (sortedVictims.size() > displayCount) {
+                victimsInfo.append(String.format("... and %d more\n", sortedVictims.size() - displayCount));
+            }
+        } else {
+            victimsInfo.append("Unknown victims");
+        }
+        
+        // Process weapons information
+        StringBuilder weaponsInfo = new StringBuilder();
+        if (weaponsUsed != null && !weaponsUsed.isEmpty()) {
+            // Count occurrences of each weapon
+            Map<String, Integer> weaponCounts = new HashMap<>();
+            for (String weapon : weaponsUsed) {
+                weaponCounts.put(weapon, weaponCounts.getOrDefault(weapon, 0) + 1);
+            }
+            
+            // Sort weapons by usage count
+            List<Map.Entry<String, Integer>> sortedWeapons = new ArrayList<>(weaponCounts.entrySet());
+            sortedWeapons.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+            
+            // Build weapons display (limited to top 3)
+            int displayCount = Math.min(3, sortedWeapons.size());
+            for (int i = 0; i < displayCount; i++) {
+                Map.Entry<String, Integer> entry = sortedWeapons.get(i);
+                weaponsInfo.append(String.format("**%s**: %d kill%s\n", 
+                                               entry.getKey(), 
+                                               entry.getValue(),
+                                               entry.getValue() > 1 ? "s" : ""));
+            }
+            
+            // If there are more weapons than we displayed
+            if (sortedWeapons.size() > displayCount) {
+                weaponsInfo.append("... and other equipment\n");
+            }
+        } else {
+            weaponsInfo.append("Various weapons");
+        }
+        
+        // Server information
+        if (serverName == null || serverName.isEmpty()) {
+            serverName = "Emerald EU"; // Default if not provided
+        }
+        String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        
+        // Create embed with enhanced styling for PvP aesthetic integration
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🔥 KILL STREAK: " + playerName.toUpperCase())
+                .setDescription("**" + streakTitle + "** - " + killCount + " consecutive kills")
+                .setColor(streakColor)
+                .addField("STREAK ANALYSIS", streakDescription + "\n" +
+                         "Combat efficiency at peak performance!", false)
+                .addField("PREFERRED ARMAMENT", weaponsInfo.toString(), true)
+                .addField("ELIMINATED TARGETS", victimsInfo.toString(), true)
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
+                .setTimestamp(Instant.now())
+                .setThumbnail(ResourceManager.getAttachmentString(ResourceManager.KILLFEED_LOGO));
+        
+        return embed.build();
+    }
+    
+    /**
+     * Overloaded method for backward compatibility
+     */
+    public static MessageEmbed killStreakEmbed(String playerName, int killCount, List<String> victims, List<String> weaponsUsed) {
+        return killStreakEmbed(playerName, killCount, victims, weaponsUsed, null);
     }
 }
