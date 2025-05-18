@@ -2,7 +2,9 @@ package com.deadside.bot.utils;
 
 import com.deadside.bot.db.models.GameServer;
 import com.deadside.bot.db.models.GuildConfig;
+import com.deadside.bot.db.repositories.GameServerRepository;
 import com.deadside.bot.db.repositories.GuildConfigRepository;
+import com.deadside.bot.db.repositories.KillRecordRepository;
 import com.deadside.bot.db.repositories.PlayerRepository;
 import com.deadside.bot.parsers.DeadsideCsvParser;
 import com.deadside.bot.parsers.KillfeedParser;
@@ -12,6 +14,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +29,108 @@ public class HistoricalDataProcessor {
     
     /**
      * Schedule processing of historical data for a server with a delay
+     * using the command channel for output
+     * 
+     * @param event The slash command event that triggered this processing
+     * @param server The game server to process historical data for
+     */
+    public static void scheduleProcessing(SlashCommandInteractionEvent event, GameServer server) {
+        // Get the interaction hook from the event for sending messages to the command channel
+        InteractionHook hook = event.getHook();
+        
+        // Create a new thread to handle the delayed processing
+        Thread processingThread = new Thread(() -> {
+            try {
+                // Wait 30 seconds to allow database to fully populate and SFTP connections to initialize
+                logger.info("Scheduling historical data processing for server {} in 30 seconds", server.getName());
+                Thread.sleep(30000);
+                
+                logger.info("Starting historical data processing for server {}", server.getName());
+                
+                // Send initial processing message with modern embed to the command channel
+                String title = "Historical Data Processing Started";
+                String description = "Starting to process all historical data for **" + server.getName() + "**.\n\n" +
+                                    "This will analyze all past server events and may take several minutes depending on the amount of data.";
+                
+                MessageEmbed embed = new EmbedBuilder()
+                    .setTitle(title)
+                    .setDescription(description)
+                    .setColor(EmbedUtils.STEEL_BLUE)
+                    .setFooter(EmbedUtils.STANDARD_FOOTER)
+                    .setTimestamp(Instant.now())
+                    .build();
+                
+                hook.sendMessageEmbeds(embed).queue();
+                
+                // Create the parsers
+                KillfeedParser killfeedParser = new KillfeedParser(event.getJDA());
+                DeadsideCsvParser csvParser = new DeadsideCsvParser(event.getJDA(), new SftpConnector(), new PlayerRepository());
+                
+                // Set historical processing flag to true for processing without Discord notifications
+                csvParser.setProcessingHistoricalData(true);
+                
+                // Process killfeed data
+                int killfeedProcessed = killfeedParser.processServer(server, true);
+                
+                // Send progress update after killfeed processing with modern embed to the command channel
+                title = "Killfeed Processing Complete";
+                description = "Successfully processed killfeed data for **" + server.getName() + "**.\n" +
+                             "Now continuing with death logs processing...";
+                
+                embed = new EmbedBuilder()
+                    .setTitle(title)
+                    .setDescription(description)
+                    .setColor(EmbedUtils.STEEL_BLUE)
+                    .addField("Killfeed Records", String.valueOf(killfeedProcessed), true)
+                    .addField("Status", "Processing Death Logs...", true)
+                    .setFooter(EmbedUtils.STANDARD_FOOTER)
+                    .setTimestamp(Instant.now())
+                    .build();
+                
+                hook.sendMessageEmbeds(embed).queue();
+                
+                // Process death logs with historical mode flag
+                int deathlogsProcessed = csvParser.processDeathLogs(server, true);
+                
+                // Send final completion message with modern embed styling to the command channel
+                title = "Historical Data Import Complete";
+                description = "Successfully processed historical data for **" + server.getName() + "**";
+                
+                // Create a modern styled embed with all the statistics
+                embed = new EmbedBuilder()
+                    .setTitle(title)
+                    .setDescription(description)
+                    .setColor(EmbedUtils.EMERALD_GREEN)
+                    .addField("Killfeed Records", String.valueOf(killfeedProcessed), true)
+                    .addField("Death Logs", String.valueOf(deathlogsProcessed), true)
+                    .setFooter(EmbedUtils.STANDARD_FOOTER)
+                    .setTimestamp(Instant.now())
+                    .build();
+                
+                hook.sendMessageEmbeds(embed).queue();
+                
+                logger.info("Completed historical data processing for server {}: {} killfeed records, {} deathlogs", 
+                        server.getName(), killfeedProcessed, deathlogsProcessed);
+            } catch (Exception e) {
+                logger.error("Error during historical data processing for server {}: {}", 
+                        server.getName(), e.getMessage(), e);
+                
+                // Send error message to the command channel
+                hook.sendMessageEmbeds(
+                    EmbedUtils.errorEmbed("Historical Data Processing Error", 
+                        "An error occurred while processing historical data for **" + server.getName() + "**: " + e.getMessage())
+                ).queue();
+            }
+        });
+        
+        // Set as daemon thread so it doesn't block JVM shutdown
+        processingThread.setDaemon(true);
+        processingThread.setName("HistoricalProcessor-" + server.getName());
+        processingThread.start();
+    }
+    
+    /**
+     * Overloaded method for backward compatibility
      * 
      * @param jda The JDA instance for Discord interaction
      * @param server The game server to process historical data for
@@ -62,6 +168,9 @@ public class HistoricalDataProcessor {
                 // Create the parsers
                 KillfeedParser killfeedParser = new KillfeedParser(jda);
                 DeadsideCsvParser csvParser = new DeadsideCsvParser(jda, new SftpConnector(), new PlayerRepository());
+                
+                // Set historical processing flag to true for processing without Discord notifications
+                csvParser.setProcessingHistoricalData(true);
                 
                 // Process killfeed data
                 int killfeedProcessed = killfeedParser.processServer(server, true);

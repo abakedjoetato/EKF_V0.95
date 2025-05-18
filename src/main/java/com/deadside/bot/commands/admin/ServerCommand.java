@@ -191,7 +191,8 @@ public class ServerCommand implements ICommand {
             serverRepository.save(gameServer);
             
             // Schedule historical data processing with a delay to allow database to populate
-            HistoricalDataProcessor.scheduleProcessing(event.getJDA(), gameServer);
+            // Pass the event directly to ensure messages go to the command channel
+            HistoricalDataProcessor.scheduleProcessing(event, gameServer);
             
             // Build success message
             StringBuilder successMessage = new StringBuilder();
