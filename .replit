@@ -1,3 +1,27 @@
+modules = ["java-17"]
 [nix]
 channel = "stable-24_05"
-packages = ["unzip"]
+packages = ["unzip", "maven", "jdk", "openjdk"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "StartBot"
+
+[[workflows.workflow]]
+name = "StartBot"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./start_bot_with_env.sh"
+
+[deployment]
+run = ["sh", "-c", "chmod +x setup.sh && ./setup.sh"]
