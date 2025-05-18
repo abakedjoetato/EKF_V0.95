@@ -289,33 +289,42 @@ public class EmbedUtils {
     
     /**
      * Create a standard PvP killfeed embed with themed messaging
+     * Enhanced with PvP aesthetic integration as part of Embed System Excellence Sweep
      *
      * @param killer The name of the player who made the kill
      * @param victim The name of the player who was killed
      * @param weapon The weapon used in the kill
      * @param distance The distance of the kill in meters
-     * @return A styled killfeed embed following Phase 7 theming guidelines
+     * @return A styled killfeed embed following latest theming guidelines
      */
     public static MessageEmbed pvpKillfeedEmbed(String killer, String victim, String weapon, int distance) {
-        // Dynamic titles from Phase 7 requirements
+        // Dynamic titles with stronger combat focus for PvP aesthetics
         String[] titles = {
             "ELIMINATION CONFIRMED",
             "NO SURVIVORS", 
             "PRECISION ELIMINATED",
-            "DEADSIDE CASUALTY"
+            "DEADSIDE CASUALTY",
+            "HOSTILE NEUTRALIZED",
+            "TARGET SILENCED"
         };
         
-        // Dynamic descriptions for killfeed from Phase 7
+        // Dynamic descriptions for killfeed with enhanced PvP aesthetics
         String[] messages = {
             String.format("Clean headshot at %dm.", distance),
             String.format("%s never saw it coming from %dm away.", victim, distance),
-            String.format("One %s round was all it took.", weapon)
+            String.format("One %s round was all it took.", weapon),
+            String.format("%dm shot with perfect accuracy.", distance),
+            String.format("%s's aim with the %s was lethal.", killer, weapon),
+            String.format("No chance to react at %dm range.", distance)
         };
         
         String[] contextMessages = {
             "The wasteland claims another victim.",
             "Another survivor's journey ends.",
-            "Clean shot. No time to react."
+            "Clean shot. No time to react.",
+            "Deadside demands blood tribute.",
+            "There is no hiding in the wasteland.",
+            "Survival requires constant vigilance."
         };
         
         // Random selection for variety
@@ -328,27 +337,154 @@ public class EmbedUtils {
         String time = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
         
         // Create embed with the correct styling per design guidelines
+        // Updated with darker shade for better visual impact in PvP focused aesthetics
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(titles[titleIndex])
                 .setDescription(killer + "\neliminated " + victim + " with " + weapon)
-                .setColor(new Color(25, 25, 25)) // Very dark gray background
+                .setColor(new Color(20, 20, 20)) // Even darker gray background for dramatic effect
                 .addField("", messages[msgIndex], false)
                 .addField("", contextMessages[contextIndex], false)
-                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time).setTimestamp(Instant.now())
+                .setFooter("Server: " + serverName + " | discord.gg/EmeraldServers | " + time)
                 .setTimestamp(Instant.now());
                 
-        // Add thumbnail logo
+        // Add thumbnail logo - enhanced with consistent resource loading
         embed.setThumbnail(ResourceManager.getAttachmentString(ResourceManager.KILLFEED_LOGO));
                 
         return embed.build();
     }
     
     /**
+     * Create a specialized PvP achievement embed that highlights combat excellence
+     * New method specifically for the PvP aesthetic integration
+     *
+     * @param playerName Name of the player being highlighted
+     * @param achievement The specific PvP achievement being recognized
+     * @param stats Optional statistics to showcase with the achievement
+     * @return A styled embed focused on PvP achievements
+     */
+    public static MessageEmbed pvpAchievementEmbed(String playerName, String achievement, String stats) {
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("⚔️ COMBAT EXCELLENCE: " + achievement.toUpperCase())
+                .setDescription(playerName + " has achieved **" + achievement + "**")
+                .setColor(new Color(77, 25, 25)) // Dark red for combat focus
+                .addField("ACHIEVEMENT DETAILS", stats, false)
+                .addField("DEADSIDE ELITE", "High-performance combat recognition", false)
+                .setFooter("Powered by Discord.gg/EmeraldServers")
+                .setTimestamp(Instant.now());
+                
+        // Add thumbnail logo
+        embed.setThumbnail(ResourceManager.getAttachmentString(ResourceManager.WEAPON_STATS_LOGO));
+                
+        return embed.build();
+    }
+    
+    /**
+     * Create a PvP headshot embed for highlighting exceptional marksmanship
+     * New method specifically for the PvP aesthetic integration
+     * 
+     * @param shooter Player who made the headshot
+     * @param victim Player who was eliminated
+     * @param weapon Weapon used for the headshot
+     * @param distance Distance of the shot
+     * @return A stylized embed focused on highlighting headshot achievements
+     */
+    public static MessageEmbed pvpHeadshotEmbed(String shooter, String victim, String weapon, int distance) {
+        // Impressive headshot messages
+        String[] headshotMessages = {
+            "PERFECT EXECUTION",
+            "ONE-TAP MASTERY", 
+            "SKULL CRUSHER",
+            "CRITICAL PRECISION",
+            "NEURAL SHUTDOWN"
+        };
+        
+        // Random selection
+        int titleIndex = (int)(Math.random() * headshotMessages.length);
+        
+        // Create a visually distinct embed for headshots
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🎯 " + headshotMessages[titleIndex])
+                .setDescription(shooter + " scored a **HEADSHOT** on " + victim + "\n" +
+                               "Distance: **" + distance + "m** with " + weapon)
+                .setColor(new Color(153, 0, 0)) // Deep blood red for headshots
+                .addField("MARKSMAN DETAILS", 
+                          "Clean shot from " + distance + "m\n" +
+                          "Weapon: " + weapon + "\n" +
+                          "Instant kill - no chance to survive", false)
+                .setFooter("Powered by Discord.gg/EmeraldServers")
+                .setTimestamp(Instant.now());
+                
+        // Add thumbnail logo - using weapon stats icon for headshot emphasis
+        embed.setThumbnail(ResourceManager.getAttachmentString(ResourceManager.WEAPON_STATS_LOGO));
+                
+        return embed.build();
+    }
+
+    /**
+     * Create a long-range kill embed for highlighting impressive distance shots
+     * New method specifically for the PvP aesthetic integration
+     * 
+     * @param shooter Player who made the long shot
+     * @param victim Player who was eliminated
+     * @param weapon Weapon used for the elimination
+     * @param distance Distance of the shot
+     * @return A stylized embed focused on long-range achievements
+     */
+    public static MessageEmbed longRangeKillEmbed(String shooter, String victim, String weapon, int distance) {
+        // Verify we're only celebrating truly impressive distances (over 200m)
+        if (distance < 200) {
+            // Fall back to standard PvP killfeed for non-impressive distances
+            return pvpKillfeedEmbed(shooter, victim, weapon, distance);
+        }
+        
+        // Impressive long shot messages
+        String[] longShotMessages = {
+            "EXTREME RANGE ELIMINATION",
+            "SHARPSHOOTER EXCELLENCE", 
+            "LETHAL PRECISION",
+            "DISTANCE MASTER",
+            "DEADSIDE SNIPER ELITE"
+        };
+        
+        // Distance classification
+        String rangeClass;
+        if (distance > 500) {
+            rangeClass = "LEGENDARY";
+        } else if (distance > 350) {
+            rangeClass = "EXCEPTIONAL";
+        } else {
+            rangeClass = "IMPRESSIVE";
+        }
+        
+        // Random title selection
+        int titleIndex = (int)(Math.random() * longShotMessages.length);
+        
+        // Create a visually distinct embed for long range kills
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🔭 " + longShotMessages[titleIndex])
+                .setDescription(shooter + " eliminated " + victim + " from\n" +
+                               "**" + distance + " METERS** away with " + weapon)
+                .setColor(new Color(0, 51, 102)) // Deep blue for long range
+                .addField(rangeClass + " RANGE", 
+                          "Distance: **" + distance + "m**\n" +
+                          "Weapon: " + weapon + "\n" +
+                          "This shot places " + shooter + " among elite marksmen", false)
+                .setFooter("Powered by Discord.gg/EmeraldServers")
+                .setTimestamp(Instant.now());
+                
+        // Add thumbnail logo - using weapon stats icon for emphasis
+        embed.setThumbnail(ResourceManager.getAttachmentString(ResourceManager.WEAPON_STATS_LOGO));
+                
+        return embed.build();
+    }
+
+    /**
      * Create a suicide embed (including menu suicide) with themed messaging
+     * Enhanced with PvP aesthetic integration as part of Embed System Excellence Sweep
      *
      * @param victim The name of the player who committed suicide
      * @param cause The cause of death (e.g., "Menu Suicide")
-     * @return A styled suicide embed following Phase 7 theming guidelines
+     * @return A styled suicide embed following updated theming guidelines
      */
     public static MessageEmbed suicideEmbed(String victim, String cause) {
         // Normalize "Suicide_by_relocation" to "Menu Suicide" as per Phase 5 requirements

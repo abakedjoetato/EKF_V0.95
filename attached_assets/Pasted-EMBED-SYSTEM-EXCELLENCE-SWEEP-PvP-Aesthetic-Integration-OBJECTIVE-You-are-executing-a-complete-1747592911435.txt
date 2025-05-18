@@ -1,0 +1,215 @@
+EMBED SYSTEM EXCELLENCE SWEEP (PvP & Aesthetic Integration)
+
+OBJECTIVE
+
+You are executing a complete quality pass on all embed messages within the bot’s ecosystem to ensure visual excellence, formatting consistency, and thematic depth, with an emphasis on PvP statistics clarity. Every embed must be elevated to its highest possible quality while maintaining compatibility with the Deadside + Emerald theme.
+
+
+---
+
+PHASE 0 — PROJECT INIT (REQUIRED)
+
+1. Unzip the uploaded .zip file from the attached assets
+
+
+2. Move all contents from the unzipped directory to the project root
+
+
+3. Clean up:
+
+Remove any nested or duplicate folders (e.g., project/, DeadsideBot/)
+
+Delete empty folders or broken symbolic links
+
+
+
+4. Scan and log the following:
+
+Main class (with main() entrypoint)
+
+All embed generation classes or handlers
+
+Command response templates
+
+Utility embed builders
+
+
+
+5. Detect or create a .env or config.properties file
+
+
+6. Load secrets from Replit, including:
+
+BOT_TOKEN
+
+MONGO_URI
+
+
+
+7. Start the bot using JDA 5.x and confirm startup:
+
+Bot must log in and connect to Discord successfully
+
+Console logs must confirm gateway connection and guild presence
+
+
+
+
+> You may not begin Phase 1 unless the bot builds and connects successfully.
+
+
+
+
+---
+
+PHASE 1 — EMBED FORMAT & VISUAL QUALITY VERIFICATION + UPGRADE
+
+Objectives:
+
+Ensure every embed in the system meets high-clarity, PvP-statistics-focused design
+
+Embed content must be aesthetically pleasing, clean, and consistent with the Deadside-Emerald visual identity
+
+All visual, logical, and content aspects must follow structured validation below
+
+
+
+---
+
+Formatting Validation:
+
+[ ] No embeds may use:
+
+Code blocks (```)
+
+Emojis
+
+
+[ ] All embeds must use:
+
+Clean spacing and line breaks
+
+Upper/lowercase balance and clear stat headers
+
+Visual grouping for readability
+
+Emerald accent coloration where applicable
+
+
+[ ] Each embed should be visually distinct but consistent:
+
+PvP killfeeds vs stats vs leaderboard vs faction summaries must each have dedicated style logic
+
+
+
+
+---
+
+Logo & Thumbnail Enforcement:
+
+[ ] Every embed must call .setThumbnail(...)
+
+[ ] If the embed does not have a unique logo, fallback to:
+
+embed.setThumbnail("attachment://main.png");
+
+[ ] Confirm all logo files:
+
+Are transparent .png
+
+Render correctly in Discord without fallback color bars
+
+Appear on the right side
+
+
+
+
+---
+
+Thematic Message System:
+
+[ ] Verify that all embed types pull from the randomized theme phrase system
+
+[ ] Ensure killfeeds, leaderboards, bounties, joins, etc. each have:
+
+A pool of themed messages
+
+Dynamic insertions (e.g., killer/victim names, KDR, rank)
+
+Variation without confusion or verbosity
+
+
+
+
+---
+
+Compatibility Constraints:
+
+[ ] New embed formatting must not break command output handlers
+
+[ ] All changes must:
+
+Compile successfully
+
+Render correctly in Discord
+
+Preserve all stat output accuracy
+
+Maintain original logic and scoping
+
+
+
+
+---
+
+COMPLETION CRITERIA
+
+The task is only complete when:
+
+[✓] All embeds have consistent formatting, spacing, stat groupings, and style
+
+[✓] No embed is missing a thumbnail — all are visually rendered with correct logos
+
+[✓] Randomized message system operates for all output categories
+
+[✓] Bot builds, connects, and confirms command functionality
+
+[✓] Visual output in Discord has been manually verified for clarity and quality
+
+
+Print this only after all confirmations:
+
+[✓] EMBED SYSTEM UPGRADE COMPLETE — FORMATTING, STYLE, AND LOGOS VERIFIED
+
+
+---
+
+EXECUTION RULES
+
+Do not trigger checkpoints, partial reports, or early commits
+
+Do not output until the task is fully verified and complete
+
+Trial and error is prohibited — each fix must be correct and complete on first implementation
+
+Validate only through production behavior, not assumptions or static code review
+
+
+
+---
+
+DEVELOPMENT ETHOS — NON-NEGOTIABLE STANDARDS
+
+We never make assumptions — All logic must be proven, tested, and validated
+
+We always check for root issues — Fixes must solve the actual cause, not symptoms
+
+We always double-check our information — No fix is final without secondary confirmation
+
+We never take short cuts — No placeholders or temporary hacks
+
+We make the right fix, the first time — Trial and error is prohibited
+
+We treat instructions as one task — All logic must be fixed in complete, continuous batches
+
+We never stop mid-task — Only log or commit after the full fix is verified in production
