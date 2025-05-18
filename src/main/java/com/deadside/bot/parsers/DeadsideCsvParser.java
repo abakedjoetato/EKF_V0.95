@@ -329,11 +329,12 @@ public class DeadsideCsvParser {
      */
     private void updateKillerStats(String killer, String killerId, String weapon, int distance) {
         try {
+            // Find or create the player
             Player player = playerRepository.findByDeadsideId(killerId);
             if (player == null) {
-                // If player doesn't exist in database, don't create yet
-                // They can be created when they link their account
-                return;
+                // Create a new player if one doesn't exist - essential for historical data processing
+                player = new Player(killerId, killer);
+                logger.info("Created new player record for {} with ID {}", killer, killerId);
             }
             
             // Update kills and score
@@ -360,7 +361,33 @@ public class DeadsideCsvParser {
             // Add kill reward
             // TODO: Add economy reward here if implemented
             
+            // Update weapon stats
+            if (weapon != null && !weapon.isEmpty()) {
+                player.addWeaponKill(weapon);
+            }
+            
+            // Increment kill streak
+            player.incrementKillStreak();
+            
+            // Update weapon kills for better statistics tracking
+            if (weapon != null && !weapon.isEmpty()) {
+                int currentCount = player.getWeaponKills().getOrDefault(weapon, 0);
+                player.getWeaponKills().put(weapon, currentCount + 1);
+                
+                // Update most used weapon if applicable
+                if (currentCount + 1 > player.getMostUsedWeaponKills()) {
+                    player.setMostUsedWeapon(weapon);
+                    player.setMostUsedWeaponKills(currentCount + 1);
+                }
+            }
+            
+            // Save the updated player
             playerRepository.save(player);
+            
+            if (logger.isDebugEnabled()) {
+                logger.debug("Updated killer stats for {} (ID: {}): kills={}, killStreak={}", 
+                    killer, killerId, player.getKills(), player.getCurrentKillStreak());
+            }
         } catch (Exception e) {
             logger.error("Error updating killer stats for {}: {}", killer, e.getMessage(), e);
         }
@@ -371,16 +398,27 @@ public class DeadsideCsvParser {
      */
     private void updateVictimStats(String victim, String victimId) {
         try {
+            // Find or create the player
             Player player = playerRepository.findByDeadsideId(victimId);
             if (player == null) {
-                // If player doesn't exist in database, don't create yet
-                return;
+                // Create a new player if one doesn't exist - essential for historical data processing
+                player = new Player(victimId, victim);
+                logger.info("Created new victim record for {} with ID {}", victim, victimId);
             }
             
             // Update deaths
             player.setDeaths(player.getDeaths() + 1);
             
+            // Reset kill streak when player dies
+            player.resetKillStreak();
+            
+            // Save the updated player
             playerRepository.save(player);
+            
+            if (logger.isDebugEnabled()) {
+                logger.debug("Updated victim stats for {} (ID: {}): deaths={}", 
+                    victim, victimId, player.getDeaths());
+            }
         } catch (Exception e) {
             logger.error("Error updating victim stats for {}: {}", victim, e.getMessage(), e);
         }
