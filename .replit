@@ -13,15 +13,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "StartBot"
+args = "FullDeadsideBot"
 
 [[workflows.workflow]]
-name = "StartBot"
+name = "FullDeadsideBot"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "./start_bot_with_env.sh"
+args = "./run_full_bot.sh"
 
 [deployment]
 run = ["sh", "-c", "chmod +x setup.sh && ./setup.sh"]
+
+[[ports]]
+localPort = 8080
+externalPort = 80
