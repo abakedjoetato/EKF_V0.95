@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import java.time.Instant;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,19 +91,21 @@ public class HistoricalDataProcessor {
                 hook.sendMessageEmbeds(embed).queue();
                 
                 // Get CSV file count before processing
-                List<String> csvFiles = sftpConnector.findDeathlogFiles(server);
+                SftpConnector sftpConnector = new SftpConnector();
+                java.util.List<String> csvFiles = sftpConnector.findDeathlogFiles(server);
                 int totalCsvFiles = csvFiles.size();
                 
                 // Create a counter to track new player records created
                 // This requires modifying the DeadsideCsvParser class, but we'll use a workaround
-                int playersBefore = playerRepository.countAll();
+                PlayerRepository playerRepo = new PlayerRepository();
+                long playersBefore = playerRepo.countAll();
                 
                 // Process death logs with historical mode flag
                 int deathlogsProcessed = csvParser.processDeathLogs(server, true);
                 
                 // Calculate new players created
-                int playersAfter = playerRepository.countAll();
-                int newPlayersCreated = playersAfter - playersBefore;
+                long playersAfter = playerRepo.countAll();
+                long newPlayersCreated = playersAfter - playersBefore;
                 
                 // Send final completion message with enhanced embed styling to the command channel
                 title = "Historical Data Import Complete";
@@ -117,7 +120,6 @@ public class HistoricalDataProcessor {
                     .addField("CSV Files Processed", csvFiles.isEmpty() ? "0" : 
                               String.valueOf(Math.min(csvFiles.size(), deathlogsProcessed > 0 ? 
                                            (int)Math.ceil(deathlogsProcessed / 100.0) : 1)), true)
-                    .addField("Killfeed Records", String.valueOf(killfeedProcessed), true)
                     .addField("Death Logs Processed", String.valueOf(deathlogsProcessed), true)
                     .addField("New Players Created", String.valueOf(newPlayersCreated), true)
                     .addField("Total Players", String.valueOf(playersAfter), true)
