@@ -334,7 +334,7 @@ public class DeadsideCsvParser {
             if (player == null) {
                 // Create a new player if one doesn't exist - essential for historical data processing
                 player = new Player(killerId, killer);
-                logger.info("Created new player record for {} with ID {}", killer, killerId);
+                logger.debug("Created new player record for {} with ID {}", killer, killerId);
             }
             
             // Update kills and score
@@ -403,7 +403,7 @@ public class DeadsideCsvParser {
             if (player == null) {
                 // Create a new player if one doesn't exist - essential for historical data processing
                 player = new Player(victimId, victim);
-                logger.info("Created new victim record for {} with ID {}", victim, victimId);
+                logger.debug("Created new victim record for {} with ID {}", victim, victimId);
             }
             
             // Update deaths

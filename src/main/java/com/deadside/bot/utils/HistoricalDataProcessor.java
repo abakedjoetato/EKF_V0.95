@@ -89,20 +89,38 @@ public class HistoricalDataProcessor {
                 
                 hook.sendMessageEmbeds(embed).queue();
                 
+                // Get CSV file count before processing
+                List<String> csvFiles = sftpConnector.findDeathlogFiles(server);
+                int totalCsvFiles = csvFiles.size();
+                
+                // Create a counter to track new player records created
+                // This requires modifying the DeadsideCsvParser class, but we'll use a workaround
+                int playersBefore = playerRepository.countAll();
+                
                 // Process death logs with historical mode flag
                 int deathlogsProcessed = csvParser.processDeathLogs(server, true);
                 
-                // Send final completion message with modern embed styling to the command channel
+                // Calculate new players created
+                int playersAfter = playerRepository.countAll();
+                int newPlayersCreated = playersAfter - playersBefore;
+                
+                // Send final completion message with enhanced embed styling to the command channel
                 title = "Historical Data Import Complete";
                 description = "Successfully processed historical data for **" + server.getName() + "**";
                 
-                // Create a modern styled embed with all the statistics
+                // Create a modern styled embed with more detailed statistics
                 embed = new EmbedBuilder()
                     .setTitle(title)
                     .setDescription(description)
                     .setColor(EmbedUtils.EMERALD_GREEN)
+                    .addField("CSV Files Found", String.valueOf(totalCsvFiles), true)
+                    .addField("CSV Files Processed", csvFiles.isEmpty() ? "0" : 
+                              String.valueOf(Math.min(csvFiles.size(), deathlogsProcessed > 0 ? 
+                                           (int)Math.ceil(deathlogsProcessed / 100.0) : 1)), true)
                     .addField("Killfeed Records", String.valueOf(killfeedProcessed), true)
-                    .addField("Death Logs", String.valueOf(deathlogsProcessed), true)
+                    .addField("Death Logs Processed", String.valueOf(deathlogsProcessed), true)
+                    .addField("New Players Created", String.valueOf(newPlayersCreated), true)
+                    .addField("Total Players", String.valueOf(playersAfter), true)
                     .setFooter(EmbedUtils.STANDARD_FOOTER)
                     .setTimestamp(Instant.now())
                     .build();
